@@ -1,26 +1,95 @@
 @import "tailwindcss";
 
+/* ─── Brand design tokens ──────────────────────────────────────────────────── */
 :root {
+  /* Surfaces */
   --background: #ffffff;
   --foreground: #171717;
-}
+  --surface-page: #F5F7FA;
+  --surface-card: #ffffff;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* FacilPay brand palette */
+  --fp-primary:      #55C2FF;
+  --fp-primary-dark: #1fa3ee;
+  --fp-soft:         #A5D4FF;
+  --fp-navy:         #000F24;
+  --fp-navy-mid:     #001a3d;
+
+  /* Semantic status */
+  --status-pending:    #f59e0b;
+  --status-processing: #0ea5e9;
+  --status-completed:  #10b981;
+  --status-failed:     #ef4444;
+  --status-refunded:   #71717a;
+  --status-cancelled:  #71717a;
+
+  /* Typography */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ─── Tailwind v4 theme wiring ─────────────────────────────────────────────── */
+@theme inline {
+  --color-background:    var(--background);
+  --color-foreground:    var(--foreground);
+  --color-surface-page:  var(--surface-page);
+  --color-surface-card:  var(--surface-card);
+  --color-fp-primary:    var(--fp-primary);
+  --color-fp-soft:       var(--fp-soft);
+  --color-fp-navy:       var(--fp-navy);
+  --font-sans:           var(--font-sans);
+  --font-mono:           var(--font-mono);
+}
+
+/* ─── Base ─────────────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--surface-page);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+/* ─── Focus ring ───────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--fp-primary);
+  outline-offset: 2px;
+}
+
+/* ─── Scrollbar (Webkit) ───────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: #d4d4d8; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
+
+/* ─── Tailwind animation utilities ─────────────────────────────────────────── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-in {
+  animation: fade-in 0.2s ease-out both;
+}
+
+/* ─── Tabular numbers ───────────────────────────────────────────────────────── */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
