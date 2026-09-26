@@ -1,26 +1,75 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --brand-primary: #55c2ff;
+  --brand-secondary: #a5d4ff;
+  --brand-accent: #000f24;
+  --semantic-success: #15803d;
+  --semantic-warning: #b45309;
+  --semantic-danger: #dc2626;
+  --semantic-info: #0284c7;
+  --semantic-muted: #64748b;
+  --semantic-border: #dbe3eb;
+  --semantic-background: #f8fafc;
+  --semantic-foreground: #101d2b;
+  --semantic-card: #ffffff;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-primary: var(--brand-primary);
+  --color-secondary: var(--brand-secondary);
+  --color-accent: var(--brand-accent);
+  --color-success: var(--semantic-success);
+  --color-warning: var(--semantic-warning);
+  --color-danger: var(--semantic-danger);
+  --color-info: var(--semantic-info);
+  --color-muted: var(--semantic-muted);
+  --color-border: var(--semantic-border);
+  --color-background: var(--semantic-background);
+  --color-foreground: var(--semantic-foreground);
+  --color-card: var(--semantic-card);
+
+  --font-heading: var(--font-montserrat);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-roboto-mono);
+
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.25rem;
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 2.5rem;
+
+  --spacing: 0.25rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --shadow-sm: 0 1px 2px 0 rgb(0 15 36 / 0.08);
+  --shadow-md: 0 4px 8px -2px rgb(0 15 36 / 0.12);
+  --shadow-lg: 0 12px 24px -8px rgb(0 15 36 / 0.16);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --semantic-muted: #94a3b8;
+  --semantic-border: #26384b;
+  --semantic-background: #07111f;
+  --semantic-foreground: #e7eef5;
+  --semantic-card: #101d2b;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--semantic-background);
+  color: var(--semantic-foreground);
+  font-family: var(--font-inter), sans-serif;
 }
