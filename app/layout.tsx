@@ -22,8 +22,8 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FacilPay Dashboard",
-  description: "Manage payments with FacilPay.",
+  title: "FacilPay | Merchant Dashboard",
+  description: "Manage payments and issue refunds with FacilPay.",
 };
 
 export default function RootLayout({
