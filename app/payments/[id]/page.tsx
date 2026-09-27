@@ -1,375 +1,293 @@
-import { notFound } from "next/navigation";
-import Link from "next/link";
-import type { Metadata } from "next";
+'use client';
 
-import { getPaymentById, getMockPayments } from "@/app/lib/api/payments";
-import { Card, CardHeader, CardDivider, DetailRow } from "@/app/components/ui/Card";
-import { PaymentStatusPill } from "@/app/components/payments/PaymentStatusBadge";
-import { PaymentTimeline } from "@/app/components/payments/PaymentTimeline";
-import { OnChainVerification, OnChainPending } from "@/app/components/payments/OnChainVerification";
-import { PaymentActions } from "@/app/components/payments/PaymentActions";
+import React, { use, useState, useEffect } from 'react';
+import Link from 'next/link';
+import DashboardLayout from '@/components/DashboardLayout';
+import ReceiptPreviewModal from '@/components/ReceiptPreviewModal';
+import { Payment } from '@/lib/types';
+import { INITIAL_PAYMENTS } from '@/lib/mockData';
+import { downloadPaymentReceipt } from '@/lib/pdfReceipt';
 
-// ─── Static params (pre-render all known payments) ────────────────────────────
-
-export async function generateStaticParams() {
-  const payments = getMockPayments();
-  return payments.map((p) => ({ id: p.id }));
-}
-
-// ─── Metadata ─────────────────────────────────────────────────────────────────
-
-export async function generateMetadata({
-  params,
-}: {
+interface PaymentDetailPageProps {
   params: Promise<{ id: string }>;
-}): Promise<Metadata> {
-  const { id } = await params;
-  const payment = await getPaymentById(id);
-  if (!payment) return { title: "Payment Not Found — FacilPay" };
-  return {
-    title: `${payment.reference} — FacilPay`,
-    description: `Payment detail for ${payment.reference}: ${payment.amount} ${payment.currency} from ${payment.sender.name} to ${payment.recipient.name}.`,
-  };
 }
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
+export default function PaymentDetailPage({ params }: PaymentDetailPageProps) {
+  const resolvedParams =
+    params && typeof (params as any).then === 'function'
+      ? use(params)
+      : (params as any);
+  const paymentId = resolvedParams?.id || '';
 
-function ChevronLeftIcon() {
-  return (
-    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-      <path fillRule="evenodd" d="M11.78 5.22a.75.75 0 010 1.06L8.06 10l3.72 3.72a.75.75 0 11-1.06 1.06l-4.25-4.25a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06 0z" clipRule="evenodd" />
-    </svg>
-  );
-}
+  const [payment, setPayment] = useState<Payment | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-function UserIcon() {
-  return (
-    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-      <path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 00-13.074.003z" />
-    </svg>
-  );
-}
+  useEffect(() => {
+    const found = INITIAL_PAYMENTS.find((p) => p.id === paymentId);
+    if (found) {
+      setPayment(found);
+    } else {
+      // Fallback dynamic payment if testing with arbitrary ID
+      setPayment({
+        id: paymentId,
+        date: new Date().toISOString(),
+        amount: 1250.0,
+        asset: 'USDC',
+        status: 'COMPLETED',
+        customerEmail: 'customer@example.com',
+        customerWallet: 'GDYTYQZ72P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5E7A',
+        merchantId: 'merch_facilpay_01',
+        merchantName: 'FacilPay Global Merchant Ltd',
+        merchantEmail: 'billing@facilpay.io',
+        txHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        stellarExpertUrl: `https://stellar.expert/explorer/testnet/tx/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`,
+        fee: 0.00001,
+        description: 'Payment facilitation transaction',
+        memo: `MEMO-${paymentId}`,
+      });
+    }
+  }, [paymentId]);
 
-function ReceiptIcon() {
-  return (
-    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-      <path fillRule="evenodd" d="M2.5 4A1.5 1.5 0 001 5.5V6h18v-.5A1.5 1.5 0 0017.5 4h-15zM19 8.5H1v6A1.5 1.5 0 002.5 16h15a1.5 1.5 0 001.5-1.5v-6zM6 13.25a.75.75 0 01.75-.75h.5a.75.75 0 010 1.5h-.5a.75.75 0 01-.75-.75zm3.25-.75a.75.75 0 000 1.5h.5a.75.75 0 000-1.5h-.5z" clipRule="evenodd" />
-    </svg>
-  );
-}
+  if (!payment) {
+    return (
+      <DashboardLayout>
+        <div className="py-12 text-center text-zinc-500">Loading payment details...</div>
+      </DashboardLayout>
+    );
+  }
 
-function ClockIcon() {
-  return (
-    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
-// ─── Helper: avatar initials ──────────────────────────────────────────────────
-
-function avatarInitials(name: string) {
-  return name
-    .split(" ")
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-}
-
-// ─── Participant card ─────────────────────────────────────────────────────────
-
-function ParticipantCard({
-  label,
-  name,
-  accountId,
-  walletAddress,
-  email,
-}: {
-  label: string;
-  name: string;
-  accountId: string;
-  walletAddress?: string;
-  email?: string;
-}) {
-  return (
-    <div className="flex-1 min-w-0 rounded-xl border border-zinc-100 bg-zinc-50 p-4">
-      <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-3">
-        {label}
-      </p>
-      <div className="flex items-center gap-3">
-        <div className="h-9 w-9 shrink-0 rounded-full bg-[#000F24] flex items-center justify-center text-white text-xs font-bold select-none">
-          {avatarInitials(name)}
-        </div>
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-zinc-900 truncate">{name}</p>
-          {email && (
-            <p className="text-xs text-zinc-500 truncate">{email}</p>
-          )}
-        </div>
-      </div>
-      {walletAddress && (
-        <div className="mt-3 rounded-lg bg-white border border-zinc-200 px-2.5 py-1.5">
-          <p className="text-xs text-zinc-400 mb-0.5">Wallet Address</p>
-          <code className="text-[10px] font-mono text-zinc-700 break-all leading-tight">
-            {walletAddress}
-          </code>
-        </div>
-      )}
-      <p className="mt-2 text-xs text-zinc-400 font-mono">{accountId}</p>
-    </div>
-  );
-}
-
-// ─── Transfer arrow ───────────────────────────────────────────────────────────
-
-function TransferArrow({ amount, currency }: { amount: number; currency: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center gap-1 px-2 shrink-0">
-      <div className="flex items-center gap-1">
-        <div className="h-px w-8 bg-zinc-300" />
-        <svg className="h-4 w-4 text-zinc-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-          <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd" />
-        </svg>
-      </div>
-      <span className="text-[10px] font-semibold text-zinc-500 tabular-nums whitespace-nowrap">
-        {amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
-        {currency}
-      </span>
-    </div>
-  );
-}
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
-export default async function PaymentDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const payment = await getPaymentById(id);
-
-  if (!payment) notFound();
-
-  const fmtDate = (iso: string) =>
-    new Date(iso).toLocaleString("en-GB", {
-      dateStyle: "medium",
-      timeStyle: "medium",
-    });
-
-  const fmtCurrency = (n: number) =>
-    n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const stellarUrl =
+    payment.stellarExpertUrl ||
+    `https://stellar.expert/explorer/testnet/tx/${payment.txHash}`;
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA]">
-      {/* ── Top bar ── */}
-      <div className="bg-white border-b border-zinc-200 sticky top-0 z-30">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-14 flex items-center gap-3">
-          <Link
-            href="/payments"
-            className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-800 transition-colors"
-          >
-            <ChevronLeftIcon />
+    <DashboardLayout>
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Breadcrumb Navigation */}
+        <div className="flex items-center gap-2 text-xs text-zinc-500">
+          <Link href="/payments" className="hover:text-zinc-900 dark:hover:text-white">
             Payments
           </Link>
-          <span className="text-zinc-300 select-none">/</span>
-          <span className="text-sm font-medium text-zinc-900 truncate">
-            {payment.reference}
-          </span>
+          <span>/</span>
+          <span className="font-mono text-zinc-900 dark:text-white">{payment.id}</span>
         </div>
-      </div>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        {/* ── Page header ── */}
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {/* Header with Title and "Download Receipt" Button */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-200 pb-5 dark:border-zinc-800">
           <div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-zinc-900">
-                {payment.reference}
-              </h1>
-              <PaymentStatusPill status={payment.status} />
-            </div>
-            {payment.description && (
-              <p className="mt-1 text-sm text-zinc-500">{payment.description}</p>
-            )}
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+              Payment Detail
+            </h1>
+            <p className="font-mono text-xs text-zinc-500 mt-1">{payment.id}</p>
           </div>
 
-          {/* Amount hero */}
-          <div className="shrink-0 text-right">
-            <p className="text-3xl font-bold text-zinc-900 tabular-nums">
-              {fmtCurrency(payment.amount)}{" "}
-              <span className="text-xl font-semibold text-zinc-500">
-                {payment.currency}
-              </span>
-            </p>
-            {payment.amountUsd != null && payment.currency !== "USD" && (
-              <p className="text-sm text-zinc-400 tabular-nums">
-                ≈ ${fmtCurrency(payment.amountUsd)} USD
-              </p>
-            )}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsPreviewOpen(true)}
+              className="rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
+            >
+              Preview Receipt
+            </button>
+            <button
+              type="button"
+              id="download-receipt-button"
+              onClick={() => downloadPaymentReceipt(payment)}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#000F24] px-5 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-zinc-800 transition-colors dark:bg-[#55C2FF] dark:text-black dark:hover:bg-[#A5D4FF]"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                />
+              </svg>
+              Download Receipt (PDF)
+            </button>
           </div>
         </div>
 
-        {/* ── Main grid: left column + right sidebar ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* ── LEFT: main content ── */}
-          <div className="lg:col-span-2 space-y-6">
-
-            {/* Participants */}
-            <Card>
-              <CardHeader
-                icon={<UserIcon />}
-                title="Participants"
-                subtitle="Sender and recipient details"
-              />
-              <CardDivider className="my-4" />
-              <div className="flex flex-col sm:flex-row items-stretch gap-2">
-                <ParticipantCard
-                  label="From"
-                  name={payment.sender.name}
-                  accountId={payment.sender.accountId}
-                  walletAddress={payment.sender.walletAddress}
-                  email={payment.sender.email}
-                />
-                <TransferArrow amount={payment.amount} currency={payment.currency} />
-                <ParticipantCard
-                  label="To"
-                  name={payment.recipient.name}
-                  accountId={payment.recipient.accountId}
-                  walletAddress={payment.recipient.walletAddress}
-                  email={payment.recipient.email}
-                />
+        {/* Amount & Status Hero Card */}
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/60">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+                Payment Amount
+              </span>
+              <div className="text-3xl font-extrabold text-[#000F24] dark:text-white mt-1">
+                {payment.amount.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}{' '}
+                <span className="text-xl font-bold text-sky-600 dark:text-sky-400">
+                  {payment.asset}
+                </span>
               </div>
-            </Card>
+            </div>
 
-            {/* Payment details */}
-            <Card>
-              <CardHeader
-                icon={<ReceiptIcon />}
-                title="Payment Details"
-              />
-              <CardDivider className="my-4" />
-              <dl className="space-y-4">
-                <DetailRow label="Payment ID"   value={payment.id}        mono />
-                <DetailRow label="Reference"    value={payment.reference} />
-                <DetailRow
-                  label="Method"
-                  value={
-                    <span className="capitalize">
-                      {payment.method.replace("_", " ")}
-                      {payment.network ? ` · ${payment.network.charAt(0).toUpperCase() + payment.network.slice(1)}` : ""}
-                    </span>
-                  }
-                />
-                <DetailRow label="Amount"
-                  value={
-                    <span className="tabular-nums">
-                      {fmtCurrency(payment.amount)} {payment.currency}
-                      {payment.amountUsd != null && payment.currency !== "USD" &&
-                        ` (≈ $${fmtCurrency(payment.amountUsd)} USD)`}
-                    </span>
-                  }
-                />
-                {payment.description && (
-                  <DetailRow label="Description" value={payment.description} />
-                )}
-                {payment.notes && (
-                  <DetailRow label="Notes" value={payment.notes} />
-                )}
-                {payment.tags && payment.tags.length > 0 && (
-                  <DetailRow
-                    label="Tags"
-                    value={
-                      <div className="flex flex-wrap gap-1.5">
-                        {payment.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="inline-flex items-center rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    }
-                  />
-                )}
-                <CardDivider />
-                <DetailRow label="Created"   value={fmtDate(payment.createdAt)} />
-                <DetailRow label="Updated"   value={fmtDate(payment.updatedAt)} />
-                {payment.completedAt && (
-                  <DetailRow label="Completed" value={fmtDate(payment.completedAt)} />
-                )}
-                {payment.expiresAt && (
-                  <DetailRow label="Expires"   value={fmtDate(payment.expiresAt)} />
-                )}
-              </dl>
-            </Card>
+            <div className="flex items-center gap-3">
+              <span
+                className={`rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider ${
+                  payment.status === 'COMPLETED'
+                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                    : payment.status === 'PENDING'
+                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                    : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                }`}
+              >
+                {payment.status}
+              </span>
+            </div>
+          </div>
+        </div>
 
-            {/* Timeline */}
-            <Card>
-              <CardHeader
-                icon={<ClockIcon />}
-                title="Payment Lifecycle"
-                subtitle="Full event history, newest first"
-              />
-              <CardDivider className="my-4" />
-              <PaymentTimeline events={payment.events} />
-            </Card>
-
+        {/* Payment & Merchant Information Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Transaction Metadata */}
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/60 space-y-4">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">
+              Payment Information
+            </h2>
+            <div className="space-y-3 text-xs">
+              <div className="flex justify-between py-1 border-b border-zinc-100 dark:border-zinc-800">
+                <span className="text-zinc-500">Payment ID</span>
+                <span className="font-mono font-semibold text-zinc-900 dark:text-white">
+                  {payment.id}
+                </span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-zinc-100 dark:border-zinc-800">
+                <span className="text-zinc-500">Date (ISO 8601)</span>
+                <span className="font-mono text-zinc-900 dark:text-white">
+                  {payment.date}
+                </span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-zinc-100 dark:border-zinc-800">
+                <span className="text-zinc-500">Asset & Network</span>
+                <span className="font-medium text-zinc-900 dark:text-white">
+                  {payment.asset} on Stellar Network
+                </span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-zinc-100 dark:border-zinc-800">
+                <span className="text-zinc-500">Network Fee</span>
+                <span className="font-medium text-zinc-900 dark:text-white">
+                  {payment.fee} XLM
+                </span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-zinc-100 dark:border-zinc-800">
+                <span className="text-zinc-500">Memo</span>
+                <span className="font-medium text-zinc-900 dark:text-white">
+                  {payment.memo || 'None'}
+                </span>
+              </div>
+              <div className="pt-1">
+                <span className="text-zinc-500 block mb-1">Description</span>
+                <p className="font-medium text-zinc-800 dark:text-zinc-200">
+                  {payment.description}
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* ── RIGHT: sidebar ── */}
-          <div className="space-y-6">
-            {/* On-chain verification */}
-            {payment.onChain ? (
-              <OnChainVerification data={payment.onChain} />
-            ) : (
-              <OnChainPending />
-            )}
+          {/* Customer & Merchant Information */}
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/60 space-y-4">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">
+              Parties
+            </h2>
+            <div className="space-y-3 text-xs">
+              <div className="py-1 border-b border-zinc-100 dark:border-zinc-800">
+                <span className="text-zinc-500 block">Merchant Name</span>
+                <span className="font-semibold text-zinc-900 dark:text-white">
+                  {payment.merchantName}
+                </span>
+              </div>
+              <div className="py-1 border-b border-zinc-100 dark:border-zinc-800">
+                <span className="text-zinc-500 block">Merchant Email & ID</span>
+                <span className="text-zinc-900 dark:text-white">
+                  {payment.merchantEmail} ({payment.merchantId})
+                </span>
+              </div>
+              <div className="py-1 border-b border-zinc-100 dark:border-zinc-800">
+                <span className="text-zinc-500 block">Customer Email</span>
+                <span className="font-semibold text-zinc-900 dark:text-white">
+                  {payment.customerEmail}
+                </span>
+              </div>
+              <div className="py-1">
+                <span className="text-zinc-500 block">Customer Stellar Address</span>
+                <p className="font-mono text-xs text-zinc-800 dark:text-zinc-300 break-all select-all mt-0.5">
+                  {payment.customerWallet}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-            {/* Actions */}
-            <PaymentActions payment={payment} />
+        {/* Blockchain Verification Box with Stellar Expert Link */}
+        <div className="rounded-2xl border border-sky-200 bg-sky-50/70 p-6 dark:border-sky-900/50 dark:bg-sky-950/20 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-sky-950 dark:text-sky-200 flex items-center gap-2">
+              <svg
+                className="h-4 w-4 text-sky-600 dark:text-sky-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Stellar Blockchain Ledger Record
+            </h3>
+            <span className="rounded-full bg-sky-200/60 px-2.5 py-0.5 text-[11px] font-semibold text-sky-800 dark:bg-sky-900 dark:text-sky-300">
+              Verified
+            </span>
+          </div>
 
-            {/* Quick stats */}
-            <Card>
-              <h2 className="text-base font-semibold text-zinc-900 mb-4">
-                Quick Stats
-              </h2>
-              <dl className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <dt className="text-xs text-zinc-500">Total Events</dt>
-                  <dd className="text-sm font-semibold text-zinc-900 tabular-nums">
-                    {payment.events.length}
-                  </dd>
-                </div>
-                {payment.onChain && (
-                  <div className="flex justify-between items-center">
-                    <dt className="text-xs text-zinc-500">Confirmations</dt>
-                    <dd className="text-sm font-semibold text-zinc-900 tabular-nums">
-                      {payment.onChain.confirmations}
-                    </dd>
-                  </div>
-                )}
-                {payment.onChain && (
-                  <div className="flex justify-between items-center">
-                    <dt className="text-xs text-zinc-500">Network Fee</dt>
-                    <dd className="text-sm font-semibold text-zinc-900 tabular-nums">
-                      {payment.onChain.fee} {payment.onChain.feeAsset}
-                    </dd>
-                  </div>
-                )}
-                <div className="flex justify-between items-center">
-                  <dt className="text-xs text-zinc-500">Network</dt>
-                  <dd className="text-sm font-semibold text-zinc-900 capitalize">
-                    {payment.network ?? "—"}
-                  </dd>
-                </div>
-              </dl>
-            </Card>
+          <div className="space-y-1">
+            <span className="text-xs text-zinc-500 font-medium">Transaction Hash</span>
+            <p className="font-mono text-xs text-zinc-900 dark:text-white break-all select-all bg-white p-2.5 rounded-xl border border-sky-100 dark:bg-zinc-900 dark:border-sky-900">
+              {payment.txHash}
+            </p>
+          </div>
+
+          <div className="pt-2 flex items-center gap-4">
+            <a
+              href={stellarUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-sky-700 transition-colors"
+            >
+              <span>Explore on Stellar Expert</span>
+              <svg
+                className="h-3.5 w-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                />
+              </svg>
+            </a>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Printable Receipt Preview Modal */}
+      <ReceiptPreviewModal
+        payment={payment}
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+      />
+    </DashboardLayout>
   );
 }

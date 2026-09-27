@@ -31,15 +31,15 @@ A **production-ready Next.js 16 application** built with TypeScript and modern t
 
 **Tech stack:**
 
-| Concern | Library |
-|---|---|
-| Framework | Next.js 16 (App Router) |
-| Language | TypeScript 5 (strict mode) |
-| Styling | Tailwind CSS v4 |
-| Server state | TanStack Query v5 |
-| Env validation | Zod |
-| Blockchain | @stellar/stellar-sdk |
-| API mocking | MSW v2 |
+## Design Tokens
+
+Tailwind utilities use the brand and semantic tokens defined in `app/globals.css`.
+The brand palette is primary blue `#55C2FF`, secondary blue `#A5D4FF`, and deep navy
+`#000F24`. Use semantic utilities such as `bg-background`, `text-danger`, and
+`border-border` instead of hard-coding colors. Use `font-heading` for Montserrat,
+`font-sans` for Inter, and `font-mono` for wallet addresses, hashes, and API keys.
+The same theme defines the type scale, spacing, radii, and elevation tokens; `.dark`
+overrides the semantic surface colors.
 
 ---
 
@@ -153,6 +153,12 @@ beforeAll(() => server.listen());
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 ```
+
+## Refund flow integration
+
+The refund screen currently uses sample payment records because this starter repository does not include a payment API or query cache. Replace the `initialPayments` data in `app/page.tsx` with the merchant payment source and invalidate/refetch its payment and refund queries after confirmation.
+
+The Soroban call expects the configured refund contract to expose `refund(payment_id: u64, amount: i128, destination: Address, reason: String)`. Amounts are sent in Stellar's 7-decimal base units. The transaction is simulated through `NEXT_PUBLIC_SOROBAN_RPC_URL` (or the connected wallet's RPC URL), signed through Freighter, and submitted to that network. Confirm this ABI and the payment ID mapping against the deployed contract before enabling production refunds.
 
 ---
 

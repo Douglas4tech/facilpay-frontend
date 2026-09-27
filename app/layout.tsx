@@ -1,23 +1,30 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import Link from "next/link";
+import { Inter, Montserrat, Roboto_Mono } from "next/font/google";
+import { Providers } from "@/components/wallet/providers";
 import "./globals.css";
 import { Providers } from "@/app/providers";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
   subsets: ["latin"],
+  weight: ["500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const robotoMono = Roboto_Mono({
+  variable: "--font-roboto-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
-  title: "FacilPay — Merchant Dashboard",
-  description:
-    "Manage your FacilPay payments, view transaction history, and verify on-chain activity.",
+  title: "FacilPay | Merchant Dashboard",
+  description: "Manage payments and issue refunds with FacilPay.",
 };
 
 // ─── Top navigation ───────────────────────────────────────────────────────────
@@ -91,33 +98,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-full flex flex-col`}
-      >
-        <TopNav />
-        <main className="flex-1">
-          <Providers>{children}</Providers>
-        </main>
-
-        <footer className="border-t border-zinc-200 bg-white mt-auto">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-12 flex items-center justify-between">
-            <p className="text-xs text-zinc-400">
-              © {new Date().getFullYear()} FacilPay. All rights reserved.
-            </p>
-            <p className="text-xs text-zinc-400">
-              Powered by the{" "}
-              <a
-                href="https://stellar.org"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#0077B6] hover:text-[#55C2FF] transition-colors"
-              >
-                Stellar Network
-              </a>
-            </p>
-          </div>
-        </footer>
+    <html lang="en">
+      <body className={`${montserrat.variable} ${inter.variable} ${robotoMono.variable} antialiased`}>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

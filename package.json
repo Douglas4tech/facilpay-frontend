@@ -6,16 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@stellar/stellar-sdk": "^13.1.0",
-    "@tanstack/react-query": "^5.62.16",
-    "@tanstack/react-query-devtools": "^5.62.16",
+    "@stellar/freighter-api": "^6.0.1",
+    "@stellar/stellar-sdk": "^17.1.0",
     "next": "16.1.4",
+    "qrcode.react": "^4.2.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "zod": "^3.23.8"
+    "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -26,11 +27,7 @@
     "eslint-config-next": "16.1.4",
     "msw": "^2.7.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
-  },
-  "msw": {
-    "workerDirectory": [
-      "public"
-    ]
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }
