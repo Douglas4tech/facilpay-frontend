@@ -29,6 +29,15 @@ The frontend leverages:
 - **TypeScript** with strict mode for type safety
 - **Tailwind CSS** for responsive and scalable styling
 
+## Design Tokens
+
+Tailwind utilities use the brand and semantic tokens defined in `app/globals.css`.
+The brand palette is primary blue `#55C2FF`, secondary blue `#A5D4FF`, and deep navy
+`#000F24`. Use semantic utilities such as `bg-background`, `text-danger`, and
+`border-border` instead of hard-coding colors. Use `font-heading` for Montserrat,
+`font-sans` for Inter, and `font-mono` for wallet addresses, hashes, and API keys.
+The same theme defines the type scale, spacing, radii, and elevation tokens; `.dark`
+overrides the semantic surface colors.
 
 ---
 
