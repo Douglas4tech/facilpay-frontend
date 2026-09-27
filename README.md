@@ -104,6 +104,12 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 > ⚠️ **Do not commit `.env.local`**. Only commit `.env.local.example`.
 
+## Refund flow integration
+
+The refund screen currently uses sample payment records because this starter repository does not include a payment API or query cache. Replace the `initialPayments` data in `app/page.tsx` with the merchant payment source and invalidate/refetch its payment and refund queries after confirmation.
+
+The Soroban call expects the configured refund contract to expose `refund(payment_id: u64, amount: i128, destination: Address, reason: String)`. Amounts are sent in Stellar's 7-decimal base units. The transaction is simulated through `NEXT_PUBLIC_SOROBAN_RPC_URL` (or the connected wallet's RPC URL), signed through Freighter, and submitted to that network. Confirm this ABI and the payment ID mapping against the deployed contract before enabling production refunds.
+
 ---
 
 ## Running the App
